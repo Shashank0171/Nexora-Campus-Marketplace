@@ -61,9 +61,3 @@ Content-Type: application/json
 DELETE http://localhost:8000/api/products/6a1165939ede658e195590fe
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTExNjU4NTllZGU2NThlMTk1NTkwZmQiLCJyb2xlIjoic3R1ZGVudCIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTc3OTUyNTE1NSwiZXhwIjoxNzgwMTI5OTU1fQ.ppYLifHYZGeTT_n8kyxUgTJvEeM3OOW6DaG2RoAn0y4
 
-###
-POST https://nexora-fullstack-1.onrender.com/api/auth/send-otp
-
-{
-  "email": "test@anurag.edu.in"
-}

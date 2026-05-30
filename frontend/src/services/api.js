@@ -1,22 +1,25 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://nexora-fullstack-1.onrender.com/api",
+  baseURL: `${import.meta.env.VITE_API_URL}/api`,
   withCredentials: true,
 });
 
 // =======================
 // REQUEST INTERCEPTOR
 // =======================
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
 
-  return config;
-});
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 // =======================
 // RESPONSE INTERCEPTOR
@@ -35,14 +38,12 @@ api.interceptors.response.use(
       path === "/" ||
       path === "/login" ||
       path === "/register" ||
-      path.startsWith("/product/") ||
-      path === "/products";
+      path === "/products" ||
+      path.startsWith("/product/");
 
     const isAuthRequest = url?.includes("/auth/me");
 
-    // =======================
-    // 401 - Unauthorized
-    // =======================
+    // 401 Unauthorized
     if (status === 401) {
       console.log("Unauthorized");
 
@@ -54,13 +55,9 @@ api.interceptors.response.use(
       }
     }
 
-    // =======================
-    // 403 - Forbidden (ONLY backend messages)
-    // =======================
+    // 403 Forbidden
     if (status === 403) {
       if (message === "Waiting for admin approval") {
-        console.log("Account pending approval");
-
         localStorage.removeItem("token");
         localStorage.removeItem("user");
 
@@ -70,7 +67,7 @@ api.interceptors.response.use(
       }
 
       if (message === "Access denied") {
-        console.log("Access denied - role mismatch");
+        console.log("Access denied");
       }
     }
 
