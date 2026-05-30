@@ -36,10 +36,12 @@ productAPI.post(
         });
       }
 
+      // CLOUDINARY IMAGE URLS
       const imagePaths = req.files.map(
-        (file) =>
-          `${process.env.BACKEND_URL}/uploads/${file.filename}`
+        (file) => file.path
       );
+
+      console.log("Uploaded Images:", imagePaths);
 
       const product = await Product.create({
         title,
@@ -51,7 +53,7 @@ productAPI.post(
         seller: req.user._id,
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         message: "Product added successfully",
         product,

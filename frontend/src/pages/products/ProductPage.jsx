@@ -19,25 +19,37 @@ export default function ProductPage() {
   });
 
   useEffect(() => {
-    (async () => {
+    const fetchProducts = async () => {
       try {
         setLoading(true);
         const res = await api.get("/products");
+
+        console.log("PRODUCTS:", res.data.products);
+
         setProducts(res.data.products || []);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    fetchProducts();
   }, []);
 
   const openProduct = (id) => navigate(`/product/${id}`);
 
   const openChat = (product) => {
-    if (!product?.seller?._id) return;
+    const sellerId = product?.seller?._id;
+
+    if (!sellerId) {
+      console.log("Seller missing in product:", product);
+      return;
+    }
 
     setChat({
       open: true,
-      receiverId: product.seller._id,
+      receiverId: sellerId,
       productId: product._id,
     });
   };
@@ -63,10 +75,7 @@ export default function ProductPage() {
       {loading ? (
         <div className="max-w-7xl mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {Array(6).fill(0).map((_, i) => (
-            <div
-              key={i}
-              className="h-80 bg-slate-100 rounded-3xl animate-pulse"
-            />
+            <div key={i} className="h-80 bg-slate-100 rounded-3xl animate-pulse" />
           ))}
         </div>
       ) : products.length === 0 ? (
@@ -95,14 +104,23 @@ export default function ProductPage() {
                 className="group bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition overflow-hidden"
               >
 
-                {/* IMAGE */}
+                {/* IMAGE FIXED */}
                 <div
                   className="relative cursor-pointer overflow-hidden"
                   onClick={() => openProduct(p._id)}
                 >
                   <img
-                    src={p.images?.[0] || "https://via.placeholder.com/400"}
-                    className="h-64 w-full object-contain bg-gradient-to-b from-white to-slate-50 p-4 group-hover:scale-105 transition duration-500"
+                    src={
+                      Array.isArray(p.images) && p.images.length > 0
+                        ? p.images[0]
+                        : "https://via.placeholder.com/400x300?text=No+Image"
+                    }
+                    alt={p.title}
+                    className="h-64 w-full object-cover bg-slate-50 group-hover:scale-105 transition duration-500"
+                    onError={(e) => {
+                      e.target.src =
+                        "https://via.placeholder.com/400x300?text=No+Image";
+                    }}
                   />
 
                   {/* badge */}

@@ -9,26 +9,46 @@ function Home() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState("All");
 
-  const categories = ["All", "Books", "Electronics", "Hostel", "Furniture", "Others"];
+  const categories = [
+    "All",
+    "Books",
+    "Electronics",
+    "Hostel",
+    "Furniture",
+    "Others",
+  ];
 
   useEffect(() => {
-    (async () => {
-      const { data } = await api.get("/products");
-      setProducts(data.products || []);
-      setFiltered(data.products || []);
-    })();
+    const fetchProducts = async () => {
+      try {
+        const { data } = await api.get("/products");
+
+        console.log("Products:", data.products);
+
+        setProducts(data.products || []);
+        setFiltered(data.products || []);
+      } catch (error) {
+        console.error("Error loading products:", error);
+      }
+    };
+
+    fetchProducts();
   }, []);
 
   useEffect(() => {
-    let res = products.filter((p) =>
-      p.title?.toLowerCase().includes(search.toLowerCase())
+    let result = products.filter((product) =>
+      product.title
+        ?.toLowerCase()
+        .includes(search.toLowerCase())
     );
 
     if (selected !== "All") {
-      res = res.filter((p) => p.category === selected);
+      result = result.filter(
+        (product) => product.category === selected
+      );
     }
 
-    setFiltered(res);
+    setFiltered(result);
   }, [search, selected, products]);
 
   return (
@@ -62,38 +82,40 @@ function Home() {
 
       {/* SEARCH */}
       <div className="max-w-3xl mx-auto mt-10 px-6">
-        <div className="
-          flex items-center gap-3
-          bg-white/70 backdrop-blur-xl
-          border border-white/40
-          shadow-sm
-          px-5 py-4 rounded-2xl
-        ">
+        <div
+          className="
+            flex items-center gap-3
+            bg-white/70 backdrop-blur-xl
+            border border-white/40
+            shadow-sm
+            px-5 py-4 rounded-2xl
+          "
+        >
           <Search size={18} className="text-indigo-500" />
+
           <input
+            type="text"
+            placeholder="Search products..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products..."
             className="w-full outline-none bg-transparent"
           />
         </div>
       </div>
 
-      {/* CATEGORY */}
+      {/* CATEGORY FILTER */}
       <div className="max-w-5xl mx-auto mt-8 px-6 flex flex-wrap gap-2 justify-center">
-        {categories.map((c) => (
+        {categories.map((category) => (
           <button
-            key={c}
-            onClick={() => setSelected(c)}
-            className={`
-              px-4 py-2 text-sm rounded-full transition
-              ${selected === c
+            key={category}
+            onClick={() => setSelected(category)}
+            className={`px-4 py-2 text-sm rounded-full transition ${
+              selected === category
                 ? "bg-indigo-500 text-white shadow-md"
                 : "bg-white/60 hover:bg-indigo-50 border border-white/40"
-              }
-            `}
+            }`}
           >
-            {c}
+            {category}
           </button>
         ))}
       </div>
@@ -101,47 +123,76 @@ function Home() {
       {/* PRODUCTS */}
       <div className="max-w-6xl mx-auto px-6 mt-12 grid md:grid-cols-3 gap-6 pb-20">
 
-        {filtered.map((p) => (
-          <Link
-            key={p._id}
-            to={`/product/${p._id}`}
-            className="
-              bg-white/70 backdrop-blur-xl
-              border border-white/40
-              rounded-3xl
-              overflow-hidden
-              shadow-sm hover:shadow-xl
-              hover:-translate-y-1
-              transition
-            "
-          >
+        {filtered.length > 0 ? (
+          filtered.map((product) => (
+            <Link
+              key={product._id}
+              to={`/product/${product._id}`}
+              className="
+                bg-white/70 backdrop-blur-xl
+                border border-white/40
+                rounded-3xl
+                overflow-hidden
+                shadow-sm
+                hover:shadow-xl
+                hover:-translate-y-1
+                transition
+              "
+            >
 
-            <img
-              src={p.images?.[0] || "https://via.placeholder.com/400"}
-              className="h-56 w-full object-cover"
-            />
+              {/* PRODUCT IMAGE */}
+              <img
+                src={
+                  product.images?.[0] ||
+                  "https://via.placeholder.com/400x300?text=No+Image"
+                }
+                alt={product.title}
+                className="h-56 w-full object-cover"
+                onError={(e) => {
+                  e.target.src =
+                    "https://via.placeholder.com/400x300?text=No+Image";
+                }}
+              />
 
-            <div className="p-5">
+              <div className="p-5">
 
-              <h3 className="font-semibold text-lg">{p.title}</h3>
+                <h3 className="font-semibold text-lg">
+                  {product.title}
+                </h3>
 
-              <p className="text-sm text-black/60 mt-1 line-clamp-2">
-                {p.description}
-              </p>
+                <p className="text-sm text-black/60 mt-1 line-clamp-2">
+                  {product.description}
+                </p>
 
-              <div className="flex justify-between mt-4 items-center">
-                <span className="font-bold text-indigo-600">
-                  ₹{p.price}
-                </span>
-                <span className="text-xs px-3 py-1 rounded-full bg-indigo-50 text-indigo-600">
-                  {p.category}
-                </span>
+                <div className="flex justify-between items-center mt-4">
+
+                  <span className="font-bold text-indigo-600">
+                    ₹{product.price}
+                  </span>
+
+                  <span className="text-xs px-3 py-1 rounded-full bg-indigo-50 text-indigo-600">
+                    {product.category}
+                  </span>
+
+                </div>
+
               </div>
 
-            </div>
+            </Link>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-20">
 
-          </Link>
-        ))}
+            <h3 className="text-xl font-semibold text-slate-700">
+              No Products Found
+            </h3>
+
+            <p className="text-slate-500 mt-2">
+              Try changing your search or category filter.
+            </p>
+
+          </div>
+        )}
 
       </div>
 

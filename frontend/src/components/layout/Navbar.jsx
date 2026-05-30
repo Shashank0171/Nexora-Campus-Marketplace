@@ -18,8 +18,9 @@ function Navbar() {
 
   const isAdmin = user?.role === "admin";
 
+  // APPROVED STUDENTS CAN SELL
   const isSeller =
-    user?.role === "seller" && user?.isApproved;
+    user?.role === "student" && user?.isApproved;
 
   const item = ({ isActive }) => `
     flex items-center gap-2 px-4 py-2 rounded-2xl text-sm transition-all
@@ -30,8 +31,8 @@ function Navbar() {
     }
   `;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     localStorage.removeItem("token");
     navigate("/login");
   };
@@ -48,36 +49,48 @@ function Navbar() {
             </div>
 
             <div className="leading-tight">
-              <h1 className="font-bold text-black">Nexora</h1>
-              <p className="text-xs text-black/50">Campus Marketplace</p>
+              <h1 className="font-bold text-black">
+                Nexora
+              </h1>
+              <p className="text-xs text-black/50">
+                Campus Marketplace
+              </p>
             </div>
           </Link>
 
-          {/* NAV */}
+          {/* NAVIGATION */}
           <nav className="hidden md:flex gap-2 items-center">
 
             <NavLink to="/" className={item}>
-              <Home size={16} /> Home
+              <Home size={16} />
+              Home
             </NavLink>
 
             {isLoggedIn && !isAdmin && (
               <>
                 <NavLink to="/sell" className={item}>
-                  <PlusCircle size={16} /> Sell
+                  <PlusCircle size={16} />
+                  Sell
                 </NavLink>
 
                 <NavLink to="/wishlist" className={item}>
-                  <Heart size={16} /> Saved
+                  <Heart size={16} />
+                  Saved
                 </NavLink>
 
                 <NavLink to="/messages" className={item}>
-                  <MessageCircle size={16} /> Chats
+                  <MessageCircle size={16} />
+                  Chats
                 </NavLink>
 
                 {/* SELLER DASHBOARD */}
                 {isSeller && (
-                  <NavLink to="/seller/dashboard" className={item}>
-                    <Store size={16} /> Seller Dashboard
+                  <NavLink
+                    to="/seller/dashboard"
+                    className={item}
+                  >
+                    <Store size={16} />
+                    Seller Dashboard
                   </NavLink>
                 )}
               </>
@@ -85,14 +98,18 @@ function Navbar() {
 
             {/* ADMIN DASHBOARD */}
             {isAdmin && (
-              <NavLink to="/admin/dashboard" className={item}>
-                <LayoutDashboard size={16} /> Admin Dashboard
+              <NavLink
+                to="/admin/dashboard"
+                className={item}
+              >
+                <LayoutDashboard size={16} />
+                Admin Dashboard
               </NavLink>
             )}
 
           </nav>
 
-          {/* RIGHT */}
+          {/* RIGHT SIDE */}
           <div className="flex items-center gap-3">
 
             {isLoggedIn ? (
