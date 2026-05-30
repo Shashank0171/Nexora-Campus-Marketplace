@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   Store,
+  HandCoins,
 } from "lucide-react";
 import { useAuth } from "../../store/AuthContext";
 
@@ -15,10 +16,8 @@ function Navbar() {
   const navigate = useNavigate();
 
   const isLoggedIn = !!user;
-
   const isAdmin = user?.role === "admin";
 
-  // APPROVED STUDENTS CAN SELL
   const isSeller =
     user?.role === "student" && user?.isApproved;
 
@@ -49,9 +48,7 @@ function Navbar() {
             </div>
 
             <div className="leading-tight">
-              <h1 className="font-bold text-black">
-                Nexora
-              </h1>
+              <h1 className="font-bold text-black">Nexora</h1>
               <p className="text-xs text-black/50">
                 Campus Marketplace
               </p>
@@ -81,6 +78,12 @@ function Navbar() {
                 <NavLink to="/messages" className={item}>
                   <MessageCircle size={16} />
                   Chats
+                </NavLink>
+
+                {/* ⭐ NEW: MY DEALS (SELLER INBOX) */}
+                <NavLink to="/my-deals" className={item}>
+                  <HandCoins size={16} />
+                  My Deals
                 </NavLink>
 
                 {/* SELLER DASHBOARD */}

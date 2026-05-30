@@ -10,24 +10,25 @@ export default function Wishlist() {
 
   // ================= FETCH =================
   const fetchWishlist = async () => {
-    let alive = true;
-
     try {
+      setLoading(true);
+      setError("");
+
       const res = await api.get("/wishlist");
 
-      if (!alive) return;
+      // SAFE fallback (handles all backend variations)
+      const data =
+        res.data?.wishlist?.products ||
+        res.data?.wishlist ||
+        res.data?.products ||
+        [];
 
-      setWishlist(res.data.wishlist?.products || []);
+      setWishlist(data);
     } catch (err) {
-      if (!alive) return;
       setError(err.response?.data?.message || "Failed to load wishlist");
     } finally {
-      if (alive) setLoading(false);
+      setLoading(false);
     }
-
-    return () => {
-      alive = false;
-    };
   };
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export default function Wishlist() {
 
   // ================= REMOVE =================
   const removeFromWishlist = async (id) => {
-    if (removingId) return; // prevent spam clicks
+    if (removingId) return;
 
     setRemovingId(id);
 
@@ -47,11 +48,14 @@ export default function Wishlist() {
     try {
       await api.delete(`/wishlist/remove/${id}`);
     } catch (err) {
-      // rollback if fails
+      // rollback
       setWishlist(previous);
       setError(err.response?.data?.message || "Failed to remove item");
     } finally {
       setRemovingId(null);
+
+      // safer sync with backend
+      fetchWishlist();
     }
   };
 
@@ -69,7 +73,7 @@ export default function Wishlist() {
 
       {/* HEADER */}
       <div className="max-w-7xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">My Wishlist</h1>
+        <h1 className="text-3xl font-bold">My Wishlist</h1>
         <p className="text-slate-500 mt-2">
           Products you've saved for later
         </p>
@@ -82,19 +86,19 @@ export default function Wishlist() {
         </div>
       )}
 
-      {/* EMPTY STATE */}
+      {/* EMPTY */}
       {wishlist.length === 0 ? (
-        <div className="max-w-2xl mx-auto bg-white border border-slate-200 rounded-3xl p-10 text-center">
-          <h2 className="text-xl font-semibold text-slate-800">
+        <div className="max-w-2xl mx-auto bg-white border rounded-3xl p-10 text-center">
+          <h2 className="text-xl font-semibold">
             Your wishlist is empty
           </h2>
           <p className="text-slate-500 mt-2">
-            Browse products and add your favourites here.
+            Browse products and add your favourites.
           </p>
 
           <Link
             to="/products"
-            className="inline-block mt-5 px-5 py-3 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition"
+            className="inline-block mt-5 px-5 py-3 rounded-xl bg-indigo-600 text-white"
           >
             Explore Products
           </Link>
@@ -105,7 +109,7 @@ export default function Wishlist() {
           {wishlist.map((p) => (
             <div
               key={p._id}
-              className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="bg-white rounded-3xl overflow-hidden border shadow-sm hover:shadow-xl transition"
             >
 
               <img
@@ -115,11 +119,11 @@ export default function Wishlist() {
 
               <div className="p-5">
 
-                <span className="inline-block px-3 py-1 rounded-full text-xs bg-indigo-50 text-indigo-600 mb-3">
+                <span className="inline-block px-3 py-1 text-xs bg-indigo-50 text-indigo-600 rounded-full mb-3">
                   {p.category}
                 </span>
 
-                <h2 className="font-semibold text-lg text-slate-900 truncate">
+                <h2 className="font-semibold text-lg truncate">
                   {p.title}
                 </h2>
 
@@ -131,7 +135,7 @@ export default function Wishlist() {
 
                   <Link
                     to={`/product/${p._id}`}
-                    className="flex-1 text-center py-2.5 rounded-xl border hover:bg-slate-100 transition"
+                    className="flex-1 text-center py-2.5 border rounded-xl hover:bg-slate-100"
                   >
                     View
                   </Link>
@@ -139,7 +143,7 @@ export default function Wishlist() {
                   <button
                     onClick={() => removeFromWishlist(p._id)}
                     disabled={removingId === p._id}
-                    className="flex-1 py-2.5 rounded-xl bg-red-500 text-white hover:bg-red-600 disabled:opacity-50"
+                    className="flex-1 py-2.5 rounded-xl bg-red-500 text-white disabled:opacity-50"
                   >
                     {removingId === p._id ? "Removing..." : "Remove"}
                   </button>
@@ -152,6 +156,7 @@ export default function Wishlist() {
 
         </div>
       )}
+
     </div>
   );
 }
