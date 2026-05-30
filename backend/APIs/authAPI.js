@@ -72,11 +72,12 @@ authRouter.post("/register", async (req, res) => {
         "Registration successful. Wait for admin approval.",
     });
   } catch (error) {
-    console.error(error);
-
+    console.error("REGISTER ERROR:", error);
+  
     return res.status(500).json({
       success: false,
       message: "Registration failed",
+      error: error.message,
     });
   }
 });
