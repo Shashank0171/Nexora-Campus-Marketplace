@@ -27,11 +27,6 @@ const app = express();
 // trust proxy (important for Render)
 app.enable("trust proxy");
 
-// ================= MIDDLEWARE =================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
 // ================= CORS =================
 const allowedOrigins = [
   "http://localhost:5173",
@@ -55,6 +50,12 @@ const corsOptions = {
   },
   credentials: true,
 };
+
+// ================= MIDDLEWARE =================
+app.use(cors(corsOptions));          // <-- CORS must come before routes
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // ================= ROUTES =================
 app.use("/api/auth", authAPI);
@@ -98,10 +99,16 @@ const server = http.createServer(app);
 // ================= SOCKET.IO =================
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://nexora-campus-marketplace.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith(".vercel.app")
+      ) {
+        return callback(null, true);
+      }
+      callback(new Error("Blocked by CORS: " + origin));
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },
