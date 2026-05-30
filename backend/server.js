@@ -36,14 +36,25 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:5173",
   "https://nexora-campus-marketplace.vercel.app",
+  "https://nexora-campus-marketplace.onrender.com",
+  "https://nexora-fullstack-1.onrender.com"
 ];
 
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app")
+    ) {
+      return callback(null, true);
+    }
+
+    callback(new Error("Blocked by CORS: " + origin));
+  },
   credentials: true,
 };
-
-app.use(cors(corsOptions));
 
 // ================= ROUTES =================
 app.use("/api/auth", authAPI);
@@ -87,7 +98,10 @@ const server = http.createServer(app);
 // ================= SOCKET.IO =================
 const io = new Server(server, {
   cors: {
-    origin: "https://nexora-campus-marketplace.vercel.app",
+    origin: [
+      "http://localhost:5173",
+      "https://nexora-campus-marketplace.vercel.app",
+    ],
     methods: ["GET", "POST"],
     credentials: true,
   },
