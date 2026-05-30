@@ -17,29 +17,47 @@ function Register() {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const email = formData.email.toLowerCase();
-    const regex = /^[0-9]{2}eg[0-9]{3}[a-z][0-9]{2}@anurag\.edu\.in$/;
 
-    if (!regex.test(email)) return toast.error("Invalid college email");
-    if (formData.password.length < 6)
-      return toast.error("Password too short");
+    const regex =
+      /^[0-9]{2}eg[0-9]{3}[a-z][0-9]{2}@anurag\.edu\.in$/;
+
+    if (!regex.test(email)) {
+      return toast.error("Invalid college email");
+    }
+
+    if (formData.password.length < 6) {
+      return toast.error("Password must be at least 6 characters");
+    }
 
     try {
       setLoading(true);
 
-      await api.post("/auth/register", { ...formData, email });
+      await api.post("/auth/register", {
+        ...formData,
+        email,
+        year: Number(formData.year), // FIXED
+      });
 
-      toast.success("Account created 🎉 Await admin approval");
+      toast.success(
+        "Account created successfully 🎉 Await admin approval"
+      );
 
       navigate("/login");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Registration failed");
+      toast.error(
+        err.response?.data?.message ||
+          "Registration failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -49,10 +67,9 @@ function Register() {
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-md">
 
-        {/* CARD */}
         <div className="glass rounded-3xl p-8 shadow-xl">
 
-          {/* HEADER */}
+          {/* Logo */}
           <div className="text-center mb-6">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white flex items-center justify-center text-xl font-bold shadow-lg">
               N
@@ -67,10 +84,13 @@ function Register() {
             </p>
           </div>
 
-          {/* FORM */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-
+          {/* Form */}
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
             <input
+              type="text"
               name="fullName"
               placeholder="Full Name"
               value={formData.fullName}
@@ -80,6 +100,7 @@ function Register() {
             />
 
             <input
+              type="email"
               name="email"
               placeholder="College Email"
               value={formData.email}
@@ -105,14 +126,32 @@ function Register() {
               className="w-full p-3 rounded-2xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-400"
               required
             >
-              <option value="">Department</option>
-              <option>Computer Science</option>
-              <option>IT</option>
-              <option>ECE</option>
-              <option>Mechanical</option>
-              <option>Civil</option>
+              <option value="">
+                Select Department
+              </option>
+
+              <option value="Computer Science">
+                Computer Science
+              </option>
+
+              <option value="IT">
+                IT
+              </option>
+
+              <option value="ECE">
+                ECE
+              </option>
+
+              <option value="Mechanical">
+                Mechanical
+              </option>
+
+              <option value="Civil">
+                Civil
+              </option>
             </select>
 
+            {/* FIXED YEAR FIELD */}
             <select
               name="year"
               value={formData.year}
@@ -120,26 +159,45 @@ function Register() {
               className="w-full p-3 rounded-2xl border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-400"
               required
             >
-              <option value="">Year</option>
-              <option>1st Year</option>
-              <option>2nd Year</option>
-              <option>3rd Year</option>
-              <option>4th Year</option>
+              <option value="">
+                Select Year
+              </option>
+
+              <option value="1">
+                1st Year
+              </option>
+
+              <option value="2">
+                2nd Year
+              </option>
+
+              <option value="3">
+                3rd Year
+              </option>
+
+              <option value="4">
+                4th Year
+              </option>
             </select>
 
             <button
+              type="submit"
               disabled={loading}
               className="w-full btn-primary py-3 font-semibold"
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading
+                ? "Creating Account..."
+                : "Create Account"}
             </button>
           </form>
 
-          {/* FOOTER */}
           <p className="text-center text-sm mt-6 text-slate-500">
             Already have an account?{" "}
-            <Link className="text-indigo-600 font-medium" to="/login">
-              Sign in
+            <Link
+              to="/login"
+              className="text-indigo-600 font-medium"
+            >
+              Sign In
             </Link>
           </p>
 
