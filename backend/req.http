@@ -1,0 +1,69 @@
+### Register User
+POST http://localhost:8000/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "password": "123456",
+  "department": "CSE",
+  "year": 3
+}
+
+###
+
+### Login User
+POST http://localhost:8000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "123456"
+}
+
+### Add Product
+POST http://localhost:8000/api/products/add
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTExNjU4NTllZGU2NThlMTk1NTkwZmQiLCJyb2xlIjoic3R1ZGVudCIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTc3OTUyNTAwMCwiZXhwIjoxNzgwMTI5ODAwfQ.dsHhroYc116moVF4vzQ4nt3BzT4t3Jus1n0_AKX-Wu4
+Content-Type: application/json
+
+{
+  "title":"Laptop",
+  "description":"Dell Laptop",
+  "price":50000,
+  "category":"Electronics",
+  "image":"image.jpg"
+}
+
+###
+
+### Get All Products
+GET http://localhost:8000/api/products
+
+###
+
+### Get Single Product
+GET http://localhost:8000/api/products/6a1165939ede658e195590fe
+
+###
+
+### Update Product
+PUT http://localhost:8000/api/products/6a1165939ede658e195590fe
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTExNjU4NTllZGU2NThlMTk1NTkwZmQiLCJyb2xlIjoic3R1ZGVudCIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTc3OTUyNTEwNCwiZXhwIjoxNzgwMTI5OTA0fQ.mzQX6aaDVXQz__aX0masX9eAYmqovDBrd94PgAxKP8k
+Content-Type: application/json
+
+{
+  "price": 40000
+}
+
+###
+
+### Delete Product
+DELETE http://localhost:8000/api/products/6a1165939ede658e195590fe
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTExNjU4NTllZGU2NThlMTk1NTkwZmQiLCJyb2xlIjoic3R1ZGVudCIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsImlhdCI6MTc3OTUyNTE1NSwiZXhwIjoxNzgwMTI5OTU1fQ.ppYLifHYZGeTT_n8kyxUgTJvEeM3OOW6DaG2RoAn0y4
+
+###
+POST https://nexora-fullstack-1.onrender.com/api/auth/send-otp
+
+{
+  "email": "test@anurag.edu.in"
+}
