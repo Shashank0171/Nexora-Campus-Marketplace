@@ -37,29 +37,44 @@ function Login() {
       setLoading(true);
 
       const res = await api.post("/auth/login", formData);
+
       const { user, token } = res.data;
 
-      if (token) localStorage.setItem("token", token);
+      if (token) {
+        localStorage.setItem("token", token);
+      }
 
       login(user);
 
       toast.success("Welcome back 👋");
 
-      if (user.role !== "admin" && !user.isApproved) {
+      // Pending approval users
+      if (
+        user.role !== "admin" &&
+        !user.isApproved
+      ) {
         navigate("/pending-approval");
         return;
       }
 
-      if (user.role?.toLowerCase() === "admin") {
+      // Admin
+      if (
+        user.role?.toLowerCase() === "admin"
+      ) {
         navigate("/admin/dashboard");
         return;
       }
 
-      const from = location.state?.from?.pathname;
-      navigate(from || "/");
+      // Normal users
+      const from =
+        location.state?.from?.pathname;
 
+      navigate(from || "/");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Login failed");
+      toast.error(
+        err.response?.data?.message ||
+          "Login failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -67,12 +82,9 @@ function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-indigo-50 via-white to-violet-50">
-
       <div className="w-full max-w-md">
 
-        {/* LOGO / HEADER */}
         <div className="text-center mb-8">
-
           <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white flex items-center justify-center text-xl font-bold shadow-lg">
             N
           </div>
@@ -84,14 +96,14 @@ function Login() {
           <p className="text-sm text-slate-500 mt-1">
             Login to your Nexora account
           </p>
-
         </div>
 
-        {/* CARD */}
         <div className="bg-white/70 backdrop-blur-md border border-white/40 shadow-xl rounded-3xl p-8">
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
             <input
               type="email"
               name="email"
@@ -114,17 +126,19 @@ function Login() {
               disabled={loading}
               className="w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-semibold hover:scale-[1.02] transition"
             >
-              {loading ? "Signing in..." : "Login"}
+              {loading
+                ? "Signing in..."
+                : "Login"}
             </button>
-
           </form>
-
         </div>
 
-        {/* FOOTER */}
         <p className="text-center text-sm mt-6 text-slate-500">
           Don’t have an account?{" "}
-          <Link className="text-indigo-600 font-medium" to="/register">
+          <Link
+            className="text-indigo-600 font-medium"
+            to="/register"
+          >
             Create one
           </Link>
         </p>

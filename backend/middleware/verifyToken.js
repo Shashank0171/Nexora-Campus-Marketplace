@@ -15,9 +15,14 @@ export const verifyToken = (roles = []) => async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
 
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(
+      decoded.userId
+    ).select("-password");
 
     if (!user) {
       return res.status(401).json({
@@ -26,21 +31,30 @@ export const verifyToken = (roles = []) => async (req, res, next) => {
       });
     }
 
-    // =========================
-    // APPROVAL LOGIC (FIXED)
-    // =========================
-    // Only block SELLERS if not approved
-    if (user.role === "seller" && !user.isApproved) {
+    // Block inactive accounts
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account blocked",
+      });
+    }
+
+    // Admin bypasses approval checks
+    if (
+      user.role !== "admin" &&
+      !user.isApproved
+    ) {
       return res.status(403).json({
         success: false,
         message: "Waiting for admin approval",
       });
     }
 
-    // =========================
-    // ROLE CHECK
-    // =========================
-    if (roles.length > 0 && !roles.includes(user.role)) {
+    // Role-based access
+    if (
+      roles.length > 0 &&
+      !roles.includes(user.role)
+    ) {
       return res.status(403).json({
         success: false,
         message: "Access denied",
@@ -48,8 +62,11 @@ export const verifyToken = (roles = []) => async (req, res, next) => {
     }
 
     req.user = user;
+
     next();
   } catch (error) {
+    console.error(error);
+
     return res.status(401).json({
       success: false,
       message: "Invalid token",

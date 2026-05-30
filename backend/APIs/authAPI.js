@@ -1,11 +1,9 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-
 import User from "../models/UserModel.js";
 
 const authRouter = express.Router();
-
 
 // ================= REGISTER =================
 authRouter.post("/register", async (req, res) => {
@@ -18,7 +16,6 @@ authRouter.post("/register", async (req, res) => {
       year,
     } = req.body;
 
-    // Allow only college emails
     if (!email || !email.endsWith("@anurag.edu.in")) {
       return res.status(400).json({
         success: false,
@@ -26,7 +23,6 @@ authRouter.post("/register", async (req, res) => {
       });
     }
 
-    // Password validation
     if (!password || password.length < 6) {
       return res.status(400).json({
         success: false,
@@ -36,7 +32,6 @@ authRouter.post("/register", async (req, res) => {
 
     const normalizedEmail = email.toLowerCase();
 
-    // Check existing user
     const existingUser = await User.findOne({
       email: normalizedEmail,
     });
@@ -48,32 +43,31 @@ authRouter.post("/register", async (req, res) => {
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(
       password,
       10
     );
 
-    // Create user
-    await User.create({
+    const user = await User.create({
       fullName,
       email: normalizedEmail,
       password: hashedPassword,
       department,
-      year,
+      year: Number(year),
       role: "student",
       isVerified: true,
-      isApproved: false, // Admin approval required
+      isApproved: false,
     });
 
     return res.status(201).json({
       success: true,
       message:
-        "Registration successful. Wait for admin approval.",
+        "Registration successful. Await admin approval.",
+      user,
     });
   } catch (error) {
     console.error("REGISTER ERROR:", error);
-  
+
     return res.status(500).json({
       success: false,
       message: "Registration failed",
@@ -81,7 +75,6 @@ authRouter.post("/register", async (req, res) => {
     });
   }
 });
-
 
 // ================= LOGIN =================
 authRouter.post("/login", async (req, res) => {
@@ -120,7 +113,6 @@ authRouter.post("/login", async (req, res) => {
       });
     }
 
-    // Block inactive users
     if (!user.isActive) {
       return res.status(403).json({
         success: false,
@@ -128,19 +120,10 @@ authRouter.post("/login", async (req, res) => {
       });
     }
 
-    // Admin approval check
-    if (
-      user.role !== "admin" &&
-      !user.isApproved
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Your account is pending admin approval.",
-      });
-    }
+    // IMPORTANT:
+    // Do NOT block unapproved users here.
+    // They should login and go to PendingApproval page.
 
-    // Generate token
     const token = jwt.sign(
       {
         userId: user._id,
@@ -156,7 +139,6 @@ authRouter.post("/login", async (req, res) => {
     const isProduction =
       process.env.NODE_ENV === "production";
 
-    // Store token in cookie
     res.cookie("token", token, {
       httpOnly: true,
       sameSite: isProduction ? "none" : "lax",
@@ -174,7 +156,7 @@ authRouter.post("/login", async (req, res) => {
       user: safeUser,
     });
   } catch (error) {
-    console.error(error);
+    console.error("LOGIN ERROR:", error);
 
     return res.status(500).json({
       success: false,
@@ -182,7 +164,6 @@ authRouter.post("/login", async (req, res) => {
     });
   }
 });
-
 
 // ================= CURRENT USER =================
 authRouter.get("/me", async (req, res) => {
@@ -215,29 +196,19 @@ authRouter.get("/me", async (req, res) => {
       });
     }
 
-    if (
-      user.role !== "admin" &&
-      !user.isApproved
-    ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "Your account is pending admin approval.",
-      });
-    }
-
     return res.status(200).json({
       success: true,
       user,
     });
   } catch (error) {
+    console.error("ME ERROR:", error);
+
     return res.status(401).json({
       success: false,
       message: "Invalid token",
     });
   }
 });
-
 
 // ================= LOGOUT =================
 authRouter.post("/logout", (req, res) => {
@@ -256,13 +227,12 @@ authRouter.post("/logout", (req, res) => {
   });
 });
 
-
 // ================= DEPLOY CHECK =================
 authRouter.get("/deploy-check", (req, res) => {
   return res.status(200).json({
     success: true,
     message:
-      "Backend running - Email Login + Admin Approval Enabled",
+      "Backend running - Admin Approval System Enabled",
   });
 });
 

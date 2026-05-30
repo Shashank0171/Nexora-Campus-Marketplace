@@ -11,7 +11,6 @@ import api from "../services/api";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,9 +18,7 @@ export const AuthProvider = ({ children }) => {
 
   const loadUser = async () => {
     try {
-
-      const token =
-        localStorage.getItem("token");
+      const token = localStorage.getItem("token");
 
       if (!token) {
         setUser(null);
@@ -35,9 +32,12 @@ export const AuthProvider = ({ children }) => {
         setUser(res.data.user);
       } else {
         setUser(null);
+        localStorage.removeItem("token");
       }
-
     } catch (error) {
+      console.log(error);
+
+      localStorage.removeItem("token");
       setUser(null);
     } finally {
       setLoading(false);
@@ -59,11 +59,15 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post("/auth/logout");
     } catch (error) {
-      console.log(error.message);
+      console.log(error);
     }
 
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
     setUser(null);
+
+    window.location.href = "/login";
   };
 
   return (
@@ -74,6 +78,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         setUser,
+        loadUser,
       }}
     >
       {children}
@@ -81,5 +86,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () =>
-  useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext);
