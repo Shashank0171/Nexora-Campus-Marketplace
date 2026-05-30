@@ -16,6 +16,7 @@ export default function ProductDetails() {
   const [chatOpen, setChatOpen] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [dealLoading, setDealLoading] = useState(false);
 
   // ================= LOAD PRODUCT =================
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function ProductDetails() {
 
   const sellerId = product?.seller?._id;
 
-  const canMessage =
+  const canInteract =
     user?._id && sellerId && user._id !== sellerId;
 
   // ================= WISHLIST =================
@@ -64,18 +65,25 @@ export default function ProductDetails() {
     }
   };
 
-  // ================= DEAL =================
+  // ================= CREATE DEAL (FIXED) =================
   const createDeal = async () => {
+    if (dealLoading) return;
+
     try {
+      setDealLoading(true);
+      setError("");
+
       const res = await api.post("/deals/create", {
         productId: product._id,
-        sellerId,
-        priceOffered: product.price,
+        offerPrice: product.price,
+        message: "Initial offer",
       });
 
       navigate(`/deals/${res.data.deal._id}`);
     } catch (err) {
-      setError("Failed to create deal");
+      setError(err.response?.data?.message || "Failed to create deal");
+    } finally {
+      setDealLoading(false);
     }
   };
 
@@ -111,10 +119,7 @@ export default function ProductDetails() {
           <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
 
             <img
-              src={
-                selectedImage ||
-                "https://via.placeholder.com/600"
-              }
+              src={selectedImage || "https://via.placeholder.com/600"}
               className="w-full h-[480px] object-contain p-6"
             />
 
@@ -197,7 +202,7 @@ export default function ProductDetails() {
 
             {!isSold ? (
               <>
-                {canMessage && (
+                {canInteract && (
                   <button
                     onClick={() => setChatOpen(true)}
                     className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-2xl"
@@ -207,12 +212,13 @@ export default function ProductDetails() {
                   </button>
                 )}
 
-                {canMessage && (
+                {canInteract && (
                   <button
                     onClick={createDeal}
+                    disabled={dealLoading}
                     className="w-full border py-3 rounded-2xl"
                   >
-                    Make Offer
+                    {dealLoading ? "Creating..." : "Make Offer"}
                   </button>
                 )}
 

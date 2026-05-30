@@ -12,12 +12,16 @@ export default function DealPage() {
   const [price, setPrice] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const fetchDeal = async () => {
     try {
       setLoading(true);
       const res = await api.get(`/deals/${dealId}`);
       setDeal(res.data.deal);
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+      setDeal(null);
     } finally {
       setLoading(false);
     }
@@ -28,25 +32,58 @@ export default function DealPage() {
   }, [dealId]);
 
   const sendOffer = async () => {
-    await api.post(`/deals/${dealId}/offer`, { price, message });
-    setPrice("");
-    setMessage("");
-    fetchDeal();
+    try {
+      setActionLoading(true);
+
+      await api.post(`/deals/${dealId}/offer`, {
+        price: Number(price),
+        message,
+      });
+
+      setPrice("");
+      setMessage("");
+      fetchDeal();
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const acceptDeal = async () => {
-    await api.patch(`/deals/${dealId}/accept`);
-    fetchDeal();
+    try {
+      setActionLoading(true);
+      await api.patch(`/deals/${dealId}/accept`);
+      fetchDeal();
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const rejectDeal = async () => {
-    await api.patch(`/deals/${dealId}/reject`);
-    fetchDeal();
+    try {
+      setActionLoading(true);
+      await api.patch(`/deals/${dealId}/reject`);
+      fetchDeal();
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const completeDeal = async () => {
-    await api.patch(`/deals/${dealId}/complete`);
-    fetchDeal();
+    try {
+      setActionLoading(true);
+      await api.patch(`/deals/${dealId}/complete`);
+      fetchDeal();
+    } catch (err) {
+      console.log(err.response?.data || err.message);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (loading) {
@@ -95,11 +132,8 @@ export default function DealPage() {
               </p>
             </div>
 
-            {/* STATUS BADGE */}
-            <div
-              className={`px-4 py-2 rounded-full text-white text-sm font-medium bg-gradient-to-r ${statusColor}`}
-            >
-              {deal.status.toUpperCase()}
+            <div className={`px-4 py-2 rounded-full text-white text-sm font-medium bg-gradient-to-r ${statusColor}`}>
+              {deal.status?.toUpperCase()}
             </div>
 
           </div>
@@ -125,13 +159,13 @@ export default function DealPage() {
 
             <div className="space-y-4">
 
-              {deal.offers.map((offer, i) => {
+              {deal.offers?.map((offer, i) => {
                 const mine = offer.offeredBy?._id === user?._id;
 
                 return (
                   <div
                     key={i}
-                    className={`p-4 rounded-2xl border transition ${
+                    className={`p-4 rounded-2xl border ${
                       mine
                         ? "bg-indigo-50 border-indigo-200"
                         : "bg-white border-slate-200"
@@ -141,7 +175,7 @@ export default function DealPage() {
                     <div className="flex justify-between items-center">
 
                       <p className="font-medium text-slate-900">
-                        {offer.offeredBy?.fullName}
+                        {offer.offeredBy?.fullName || "User"}
                       </p>
 
                       <p className="font-bold text-indigo-600">
@@ -177,19 +211,20 @@ export default function DealPage() {
                   placeholder="Enter price"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="w-full border rounded-xl p-3 mb-3 focus:ring-2 focus:ring-indigo-400 outline-none"
+                  className="w-full border rounded-xl p-3 mb-3"
                 />
 
                 <input
                   placeholder="Message (optional)"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="w-full border rounded-xl p-3 mb-4 focus:ring-2 focus:ring-indigo-400 outline-none"
+                  className="w-full border rounded-xl p-3 mb-4"
                 />
 
                 <button
+                  disabled={actionLoading}
                   onClick={sendOffer}
-                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white py-3 rounded-xl flex items-center justify-center gap-2 hover:opacity-90"
+                  className="w-full bg-indigo-600 text-white py-3 rounded-xl flex items-center justify-center gap-2"
                 >
                   <Send size={14} />
                   Send Offer
@@ -203,16 +238,18 @@ export default function DealPage() {
               <div className="bg-white border rounded-3xl p-5 shadow-sm space-y-3">
 
                 <button
+                  disabled={actionLoading}
                   onClick={acceptDeal}
-                  className="w-full bg-emerald-500 text-white py-3 rounded-xl flex items-center justify-center gap-2 hover:opacity-90"
+                  className="w-full bg-emerald-500 text-white py-3 rounded-xl flex items-center justify-center gap-2"
                 >
                   <Check size={14} />
                   Accept Deal
                 </button>
 
                 <button
+                  disabled={actionLoading}
                   onClick={rejectDeal}
-                  className="w-full bg-red-500 text-white py-3 rounded-xl flex items-center justify-center gap-2 hover:opacity-90"
+                  className="w-full bg-red-500 text-white py-3 rounded-xl flex items-center justify-center gap-2"
                 >
                   <X size={14} />
                   Reject Deal
@@ -223,6 +260,7 @@ export default function DealPage() {
 
             {deal.status === "accepted" && (
               <button
+                disabled={actionLoading}
                 onClick={completeDeal}
                 className="w-full bg-black text-white py-3 rounded-2xl"
               >

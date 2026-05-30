@@ -6,18 +6,20 @@ import { verifyToken } from "../middleware/verifyToken.js";
 const dealRouter = express.Router();
 
 
+// =======================
 // CREATE DEAL
+// =======================
 dealRouter.post(
   "/create",
   verifyToken(["student", "admin"]),
   async (req, res) => {
     try {
-      const { productId, sellerId, offerPrice } = req.body;
+      const { productId, offerPrice, message } = req.body;
 
-      if (!productId || !sellerId || !offerPrice) {
+      if (!productId || !offerPrice) {
         return res.status(400).json({
           success: false,
-          message: "All fields are required",
+          message: "productId and offerPrice are required",
         });
       }
 
@@ -30,6 +32,13 @@ dealRouter.post(
         });
       }
 
+      if (product.seller.toString() === req.user._id.toString()) {
+        return res.status(400).json({
+          success: false,
+          message: "You cannot buy your own product",
+        });
+      }
+
       if (product.isSold || product.status === "Sold") {
         return res.status(400).json({
           success: false,
@@ -37,38 +46,28 @@ dealRouter.post(
         });
       }
 
-      if (
-        product.seller.toString() ===
-        req.user._id.toString()
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "You cannot buy your own product",
-        });
-      }
-
       const deal = await Deal.create({
         product: productId,
         buyer: req.user._id,
-        seller: sellerId,
+        seller: product.seller,
         status: "negotiation",
         offers: [
           {
             offeredBy: req.user._id,
             price: Number(offerPrice),
-            message: "Initial offer",
+            message: message || "Initial offer",
           },
         ],
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         message: "Deal created successfully",
         deal,
       });
 
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -77,7 +76,45 @@ dealRouter.post(
 );
 
 
+// =======================
+// GET SINGLE DEAL
+// =======================
+dealRouter.get(
+  "/:dealId",
+  verifyToken(["student", "admin"]),
+  async (req, res) => {
+    try {
+      const deal = await Deal.findById(req.params.dealId)
+        .populate("product")
+        .populate("buyer", "fullName email")
+        .populate("seller", "fullName email")
+        .populate("offers.offeredBy", "fullName email");
+
+      if (!deal) {
+        return res.status(404).json({
+          success: false,
+          message: "Deal not found",
+        });
+      }
+
+      return res.json({
+        success: true,
+        deal,
+      });
+
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  }
+);
+
+
+// =======================
 // ADD OFFER
+// =======================
 dealRouter.post(
   "/:dealId/offer",
   verifyToken(["student", "admin"]),
@@ -101,28 +138,22 @@ dealRouter.post(
         });
       }
 
-      const isBuyer =
-        deal.buyer.toString() ===
-        req.user._id.toString();
-
-      const isSeller =
-        deal.seller.toString() ===
-        req.user._id.toString();
-
-      const isAdmin =
-        req.user.role === "admin";
-
-      if (!isBuyer && !isSeller && !isAdmin) {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied",
-        });
-      }
-
       if (deal.status !== "negotiation") {
         return res.status(400).json({
           success: false,
-          message: "Deal already closed",
+          message: "Deal is closed",
+        });
+      }
+
+      const allowed =
+        deal.buyer.toString() === req.user._id.toString() ||
+        deal.seller.toString() === req.user._id.toString() ||
+        req.user.role === "admin";
+
+      if (!allowed) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied",
         });
       }
 
@@ -134,14 +165,14 @@ dealRouter.post(
 
       await deal.save();
 
-      res.json({
+      return res.json({
         success: true,
-        message: "Offer added successfully",
+        message: "Offer added",
         deal,
       });
 
     } catch (error) {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         message: error.message,
       });
@@ -150,7 +181,130 @@ dealRouter.post(
 );
 
 
+// =======================
+// ACCEPT DEAL
+// =======================
+dealRouter.patch(
+  "/:dealId/accept",
+  verifyToken(["student", "admin"]),
+  async (req, res) => {
+    try {
+      const deal = await Deal.findById(req.params.dealId);
+
+      if (!deal) {
+        return res.status(404).json({ message: "Deal not found" });
+      }
+
+      const isSeller =
+        deal.seller.toString() === req.user._id.toString();
+
+      const isAdmin = req.user.role === "admin";
+
+      if (!isSeller && !isAdmin) {
+        return res.status(403).json({ message: "Not allowed" });
+      }
+
+      deal.status = "accepted";
+      deal.finalPrice = deal.offers.at(-1)?.price;
+
+      await deal.save();
+
+      res.json({
+        success: true,
+        message: "Deal accepted",
+        deal,
+      });
+
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
+
+// =======================
+// REJECT DEAL
+// =======================
+dealRouter.patch(
+  "/:dealId/reject",
+  verifyToken(["student", "admin"]),
+  async (req, res) => {
+    try {
+      const deal = await Deal.findById(req.params.dealId);
+
+      if (!deal) {
+        return res.status(404).json({ message: "Deal not found" });
+      }
+
+      const isSeller =
+        deal.seller.toString() === req.user._id.toString();
+
+      const isAdmin = req.user.role === "admin";
+
+      if (!isSeller && !isAdmin) {
+        return res.status(403).json({ message: "Not allowed" });
+      }
+
+      deal.status = "rejected";
+
+      await deal.save();
+
+      res.json({
+        success: true,
+        message: "Deal rejected",
+        deal,
+      });
+
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
+
+// =======================
+// COMPLETE DEAL
+// =======================
+dealRouter.patch(
+  "/:dealId/complete",
+  verifyToken(["student", "admin"]),
+  async (req, res) => {
+    try {
+      const deal = await Deal.findById(req.params.dealId);
+
+      if (!deal) {
+        return res.status(404).json({ message: "Deal not found" });
+      }
+
+      const isBuyer =
+        deal.buyer.toString() === req.user._id.toString();
+
+      const isAdmin = req.user.role === "admin";
+
+      if (!isBuyer && !isAdmin) {
+        return res.status(403).json({ message: "Not allowed" });
+      }
+
+      deal.status = "completed";
+
+      await deal.save();
+
+      res.json({
+        success: true,
+        message: "Deal completed",
+        deal,
+      });
+
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  }
+);
+
+
+// =======================
 // MY DEALS
+// =======================
 dealRouter.get(
   "/my",
   verifyToken(["student", "admin"]),
@@ -165,7 +319,7 @@ dealRouter.get(
         .populate("product")
         .populate("buyer", "fullName email")
         .populate("seller", "fullName email")
-        .populate("offers.offeredBy", "fullName")
+        .populate("offers.offeredBy", "fullName email")
         .sort({ createdAt: -1 });
 
       res.json({
