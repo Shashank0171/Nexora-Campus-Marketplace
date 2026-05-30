@@ -17,57 +17,35 @@ import dealRouter from "./APIs/dealAPI.js";
 
 dotenv.config();
 
-// ensure uploads directory exists on production
+// ensure uploads directory exists
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
 }
 
 const app = express();
 
-// trust reverse proxy (Render) to correctly identify HTTPS req.protocol
+// trust proxy (important for Render)
 app.enable("trust proxy");
 
-// middleware
+// ================= MIDDLEWARE =================
 app.use(express.json());
-
-app.use(
-  express.urlencoded({
-    extended: true,
-  })
-);
-
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// cors configuration allowing dynamic Vercel domains
+// ================= CORS =================
 const allowedOrigins = [
-  "https://nexora-fullstack.vercel.app",
-  "https://nexora-fullstack-uner.vercel.app",
-  "http://localhost:5173"
+  "http://localhost:5173",
+  "https://nexora-campus-marketplace.vercel.app",
 ];
 
-if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
-}
-
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    
-    // Normalize trailing slash
-    const normalizedOrigin = origin.replace(/\/$/, "");
-    
-    if (allowedOrigins.includes(normalizedOrigin) || normalizedOrigin.endsWith(".vercel.app")) {
-      return callback(null, true);
-    }
-    
-    return callback(new Error("Blocked by CORS policy: " + origin));
-  },
+  origin: allowedOrigins,
   credentials: true,
 };
 
 app.use(cors(corsOptions));
 
-// routes
+// ================= ROUTES =================
 app.use("/api/auth", authAPI);
 app.use("/api/products", productAPI);
 app.use("/api/messages", messageAPI);
@@ -76,32 +54,24 @@ app.use("/api/admin", adminAPI);
 app.use("/api/deals", dealRouter);
 
 // uploads
-app.use(
-  "/uploads",
-  express.static("uploads")
-);
+app.use("/uploads", express.static("uploads"));
 
 // test route
 app.get("/", (req, res) => {
-
   res.json({
     success: true,
     message: "API running",
   });
-
 });
 
-// 404
+// ================= ERROR HANDLING =================
 app.use((req, res) => {
-
   res.status(404).json({
     success: false,
     message: "Route not found",
   });
-
 });
 
-// 500 error handler
 app.use((err, req, res, next) => {
   console.error("[SERVER ERROR]:", err);
   res.status(500).json({
@@ -111,64 +81,48 @@ app.use((err, req, res, next) => {
   });
 });
 
-// server
-const server =
-  http.createServer(app);
+// ================= HTTP SERVER =================
+const server = http.createServer(app);
 
-// socket
+// ================= SOCKET.IO =================
 const io = new Server(server, {
-  cors: corsOptions,
+  cors: {
+    origin: "https://nexora-campus-marketplace.vercel.app",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
 
-io.on(
-  "connection",
-  (socket) => {
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
 
-    console.log(
-      "User connected:",
-      socket.id
-    );
+  // join room (optional upgrade)
+  socket.on("join_room", (roomId) => {
+    socket.join(roomId);
+  });
 
-    socket.on(
-      "disconnect",
-      () => {
+  // send message
+  socket.on("send_message", (data) => {
+    io.emit("receive_message", data);
+  });
 
-        console.log(
-          "User disconnected:",
-          socket.id
-        );
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
 
-      }
-    );
-
-  }
-);
-
-// db connection
+// ================= DATABASE =================
 mongoose
   .connect(process.env.DB_URL)
   .then(() => {
+    console.log("MongoDB Connected");
 
-    console.log(
-      "MongoDB Connected"
-    );
+    const PORT = process.env.PORT || 8000;
 
-    server.listen(
-      process.env.PORT || 8000,
-      () => {
-
-        console.log(
-          `Server running on ${
-            process.env.PORT || 8000
-          }`
-        );
-
-      }
-    );
-
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
   })
   .catch((err) => {
-
-    console.log(err);
-
+    console.log("DB Error:", err);
   });
