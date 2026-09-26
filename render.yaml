@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: nexora-fullstack-1
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_URL
+        sync: false        # set this manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false        # set this manually in Render dashboard
+      - key: CLOUD_NAME
+        sync: false
+      - key: CLOUD_API_KEY
+        sync: false
+      - key: CLOUD_API_SECRET
+        sync: false
+    healthCheckPath: /health
