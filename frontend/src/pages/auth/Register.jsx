@@ -28,11 +28,8 @@ function Register() {
 
     const email = formData.email.toLowerCase();
 
-    const regex =
-      /^[0-9]{2}eg[0-9]{3}[a-z][0-9]{2}@anurag\.edu\.in$/;
-
-    if (!regex.test(email)) {
-      return toast.error("Invalid college email");
+    if (!email.endsWith("@anurag.edu.in")) {
+      return toast.error("Only @anurag.edu.in emails are allowed");
     }
 
     if (formData.password.length < 6) {
